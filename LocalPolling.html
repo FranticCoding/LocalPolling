@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FormPulse — Polling Software</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f7f5f0;
+    --cream: #ede9e0;
+    --accent: #4f46e5;
+    --accent-light: #818cf8;
+    --accent-pale: #eef2ff;
+    --success: #059669;
+    --danger: #dc2626;
+    --border: #d6d0c4;
+    --shadow: 0 2px 12px rgba(26,26,46,0.08), 0 1px 3px rgba(26,26,46,0.06);
+    --shadow-lg: 0 8px 32px rgba(26,26,46,0.12), 0 2px 8px rgba(26,26,46,0.08);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── HEADER ─────────────────────────────────────────── */
+  .app-header {
+    background: var(--ink);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .app-header .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.35rem;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .logo-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent-light); display: inline-block; }
+  .header-tabs { display: flex; gap: 4px; }
+  .tab-btn {
+    background: none; border: none; color: rgba(255,255,255,0.55);
+    font-family: 'DM Sans', sans-serif; font-size: 0.875rem; font-weight: 500;
+    padding: 6px 14px; border-radius: 6px; cursor: pointer; transition: all 0.15s;
+  }
+  .tab-btn.active, .tab-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+  .tab-btn.active { color: var(--accent-light); }
+
+  /* ── MAIN LAYOUT ─────────────────────────────────────── */
+  .main { max-width: 780px; margin: 0 auto; padding: 32px 16px 80px; }
+
+  /* ── CARDS ───────────────────────────────────────────── */
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+  }
+  .card:hover { box-shadow: var(--shadow-lg); }
+  .card-header-bar { height: 8px; background: var(--accent); }
+
+  /* ── FORM TITLE CARD ─────────────────────────────────── */
+  .title-card { padding: 28px 32px 24px; border-left: 4px solid var(--accent); }
+  .title-card .form-title-input {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.9rem;
+    border: none; outline: none;
+    background: transparent;
+    color: var(--ink);
+    width: 100%;
+    border-bottom: 2px solid transparent;
+    padding-bottom: 4px;
+    transition: border-color 0.2s;
+  }
+  .title-card .form-title-input:focus { border-bottom-color: var(--accent); }
+  .title-card .form-desc-input {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    border: none; outline: none;
+    background: transparent;
+    color: #666;
+    width: 100%;
+    margin-top: 8px;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+  .title-card .form-desc-input:focus { border-bottom-color: var(--border); }
+
+  /* ── QUESTION CARD ───────────────────────────────────── */
+  .q-card { padding: 24px 32px; position: relative; }
+  .q-card.focused { border-left: 4px solid var(--accent); }
+  .q-card-top { display: flex; gap: 12px; align-items: flex-start; }
+  .q-number {
+    font-size: 0.7rem; font-weight: 600; color: var(--accent);
+    background: var(--accent-pale); border-radius: 4px;
+    padding: 3px 7px; margin-top: 10px; white-space: nowrap;
+  }
+  .q-body { flex: 1; }
+  .q-label-input {
+    font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 500;
+    border: none; outline: none; background: transparent;
+    color: var(--ink); width: 100%;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    transition: border-color 0.2s;
+  }
+  .q-label-input:focus { border-bottom-color: var(--accent); }
+  .q-type-row { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+  .q-type-select {
+    font-family: 'DM Sans', sans-serif; font-size: 0.8rem;
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 5px 10px; background: #fff; color: var(--ink);
+    cursor: pointer; outline: none;
+    transition: border-color 0.2s;
+  }
+  .q-type-select:focus { border-color: var(--accent); }
+  .required-toggle { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #888; cursor: pointer; }
+  .required-toggle input { accent-color: var(--accent); }
+
+  /* Option list */
+  .options-list { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .option-row { display: flex; align-items: center; gap: 8px; }
+  .option-icon { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; }
+  .option-icon.checkbox-icon { border-radius: 4px; }
+  .option-input {
+    flex: 1; font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+    border: none; outline: none; background: transparent;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 3px; color: var(--ink);
+    transition: border-color 0.2s;
+  }
+  .option-input:focus { border-bottom-color: var(--accent); }
+  .option-remove {
+    background: none; border: none; cursor: pointer;
+    color: #bbb; font-size: 1.1rem; padding: 0 4px;
+    transition: color 0.15s;
+  }
+  .option-remove:hover { color: var(--danger); }
+  .add-option-btn {
+    margin-top: 8px; background: none; border: none; cursor: pointer;
+    color: var(--accent); font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem; font-weight: 500;
+    display: flex; align-items: center; gap: 5px;
+    padding: 4px 0;
+  }
+  .add-option-btn:hover { color: var(--accent-light); }
+
+  /* Short/long answer preview */
+  .answer-preview {
+    margin-top: 12px; font-size: 0.85rem; color: #aaa;
+    border-bottom: 1px dashed var(--border);
+    padding-bottom: 6px; font-style: italic;
+  }
+
+  /* q-card actions */
+  .q-actions {
+    display: flex; gap: 8px; margin-top: 16px; padding-top: 12px;
+    border-top: 1px solid var(--cream); justify-content: flex-end;
+  }
+  .q-action-btn {
+    background: none; border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 12px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.8rem;
+    cursor: pointer; color: #666; transition: all 0.15s;
+  }
+  .q-action-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .q-action-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* ── ADD QUESTION BAR ────────────────────────────────── */
+  .add-q-bar {
+    display: flex; justify-content: center; padding: 16px 0;
+  }
+  .add-q-btn {
+    background: var(--ink); color: #fff;
+    border: none; border-radius: 8px;
+    padding: 10px 22px; font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; font-weight: 500; cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .add-q-btn:hover { background: #2d2d4e; transform: translateY(-1px); }
+  .add-q-btn:active { transform: translateY(0); }
+
+  /* ── FOOTER ACTIONS ──────────────────────────────────── */
+  .form-actions {
+    display: flex; gap: 12px; justify-content: flex-end;
+    padding: 20px 0;
+  }
+  .btn {
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500;
+    border-radius: 8px; padding: 10px 22px; cursor: pointer;
+    transition: all 0.15s; border: none;
+  }
+  .btn-secondary {
+    background: #fff; border: 1px solid var(--border); color: var(--ink);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary {
+    background: var(--accent); color: #fff;
+  }
+  .btn-primary:hover { background: #4338ca; transform: translateY(-1px); }
+
+  /* ── PREVIEW / RESPOND VIEW ──────────────────────────── */
+  #respond-view .resp-card { padding: 28px 32px; }
+  .resp-title { font-family: 'DM Serif Display', serif; font-size: 1.7rem; margin-bottom: 8px; }
+  .resp-desc { color: #777; font-size: 0.95rem; }
+
+  .resp-question { margin-bottom: 24px; }
+  .resp-q-label {
+    font-size: 0.95rem; font-weight: 500; margin-bottom: 10px; color: var(--ink);
+  }
+  .resp-q-label .req { color: var(--danger); margin-left: 3px; }
+  .resp-input {
+    width: 100%; font-family: 'DM Sans', sans-serif; font-size: 0.95rem;
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 12px; outline: none; color: var(--ink);
+    transition: border-color 0.2s;
+  }
+  .resp-input:focus { border-color: var(--accent); }
+  .resp-textarea {
+    resize: vertical; min-height: 90px;
+  }
+  .resp-radio-group, .resp-checkbox-group { display: flex; flex-direction: column; gap: 8px; }
+  .resp-radio-label, .resp-checkbox-label {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 0.9rem; cursor: pointer;
+    padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+  .resp-radio-label:hover, .resp-checkbox-label:hover { border-color: var(--accent); background: var(--accent-pale); }
+  .resp-radio-label input, .resp-checkbox-label input { accent-color: var(--accent); }
+
+  /* ── RESULTS VIEW ────────────────────────────────────── */
+  .results-header { padding: 24px 32px; }
+  .results-title { font-family: 'DM Serif Display', serif; font-size: 1.5rem; }
+  .results-sub { color: #888; font-size: 0.85rem; margin-top: 4px; }
+  .results-table-wrap { overflow-x: auto; padding: 0 32px 24px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { background: var(--ink); color: #fff; font-weight: 500; padding: 10px 12px; text-align: left; }
+  td { border-bottom: 1px solid var(--cream); padding: 9px 12px; color: #444; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--accent-pale); }
+  .no-results { text-align: center; color: #aaa; font-size: 0.9rem; padding: 32px 0; }
+
+  .results-actions { display: flex; gap: 10px; padding: 0 32px 24px; }
+  .save-status {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.8rem; color: var(--success);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .save-status.visible { opacity: 1; }
+
+  /* ── THANK YOU OVERLAY ───────────────────────────────── */
+  .thankyou-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 200;
+    background: var(--paper);
+    flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 40px;
+    animation: fadeIn 0.35s ease;
+  }
+  .thankyou-overlay.visible { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+  .thankyou-icon {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: var(--success); display: flex; align-items: center; justify-content: center;
+    margin-bottom: 28px;
+    box-shadow: 0 0 0 16px rgba(5,150,105,0.1);
+    animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) 0.1s both;
+  }
+  @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
+  .thankyou-icon svg { width: 40px; height: 40px; stroke: #fff; stroke-width: 3; }
+  .thankyou-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.4rem; color: var(--ink); margin-bottom: 12px;
+  }
+  .thankyou-sub {
+    font-size: 1rem; color: #777; max-width: 340px; line-height: 1.6; margin-bottom: 36px;
+  }
+  .thankyou-bar {
+    width: 240px; height: 4px; background: var(--cream); border-radius: 99px; overflow: hidden;
+  }
+  .thankyou-bar-fill {
+    height: 100%; background: var(--accent); border-radius: 99px;
+    width: 0%; transition: width linear;
+  }
+  .thankyou-hint { font-size: 0.78rem; color: #bbb; margin-top: 10px; }
+
+  /* ── TOAST ───────────────────────────────────────────── */
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: #fff;
+    font-family: 'DM Sans', sans-serif; font-size: 0.88rem;
+    padding: 10px 20px; border-radius: 8px;
+    opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 999;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .view-hidden { display: none !important; }
+  /* ── UTILITIES ───────────────────────────────────────── */
+  .hidden { display: none !important; }
+  @media (max-width: 600px) {
+    .q-card, .title-card, .resp-card, .results-header, .results-table-wrap, .results-actions { padding-left: 16px; padding-right: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── HEADER ─────────────────────────────────────────── -->
+<header class="app-header">
+  <div class="logo"><span class="logo-dot"></span>FormPulse</div>
+  <div class="header-tabs">
+    <button class="tab-btn active" onclick="switchTab('edit')">Edit</button>
+    <button class="tab-btn" onclick="switchTab('respond')">Preview</button>
+    <button class="tab-btn" onclick="switchTab('results')">Results</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- ─── EDIT VIEW ──────────────────────────────────────── -->
+  <div id="edit-view">
+    <div class="card">
+      <div class="card-header-bar"></div>
+      <div class="title-card">
+        <input class="form-title-input" id="form-title" placeholder="Untitled Poll" value="Customer Satisfaction Survey"/>
+        <input class="form-desc-input" id="form-desc" placeholder="Form description (optional)" value="Help us improve by sharing your experience."/>
+      </div>
+    </div>
+
+    <div id="questions-container"></div>
+
+    <div class="add-q-bar">
+      <button class="add-q-btn" onclick="addQuestion()">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Add Question
+      </button>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="switchTab('respond')">Preview Form</button>
+    </div>
+  </div>
+
+  <!-- ─── RESPOND VIEW ───────────────────────────────────── -->
+  <div id="respond-view">
+    <div class="card">
+      <div class="card-header-bar"></div>
+      <div class="resp-card">
+        <div class="resp-title" id="preview-title"></div>
+        <div class="resp-desc" id="preview-desc"></div>
+      </div>
+    </div>
+    <div id="preview-questions"></div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="switchTab('edit')">← Back to Edit</button>
+      <button class="btn btn-primary" onclick="submitResponse()">Submit Response</button>
+    </div>
+  </div>
+
+  <!-- ─── RESULTS VIEW ───────────────────────────────────── -->
+  <div id="results-view">
+    <div class="card">
+      <div class="card-header-bar" style="background: var(--success)"></div>
+      <div class="results-header">
+        <div class="results-title">Responses</div>
+        <div class="results-sub" id="results-count">No responses yet.</div>
+      </div>
+      <div class="results-table-wrap">
+        <div id="results-table-area"></div>
+      </div>
+      <div class="results-actions">
+        <button class="btn btn-primary" onclick="saveToCSV()">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="display:inline;margin-right:6px"><path d="M12 3v12m0 0l-4-4m4 4l4-4M3 19h18"/></svg>
+          Save to results.csv
+        </button>
+        <button class="btn btn-secondary" onclick="clearResults()">Clear All</button>
+        <span class="save-status" id="save-status">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
+          Saved to results.csv
+        </span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── THANK YOU OVERLAY ──────────────────────────────────── -->
+<div class="thankyou-overlay" id="thankyou-overlay">
+  <div class="thankyou-icon">
+    <svg fill="none" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+  <div class="thankyou-title">Thank you!</div>
+  <div class="thankyou-sub">Your response has been recorded. The next patient can begin their check-in.</div>
+  <div class="thankyou-bar"><div class="thankyou-bar-fill" id="thankyou-bar-fill"></div></div>
+  <div class="thankyou-hint">Returning to form…</div>
+</div>
+
+<!-- ─── TOAST ─────────────────────────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STATE ────────────────────────────────────────────────
+let questions = [];
+let responses = [];
+let qIdCounter = 0;
+let fileHandle = null; // for File System Access API
+
+// ─── INIT ─────────────────────────────────────────────────
+function init() {
+  addQuestion('How would you rate your overall experience?', 'radio', ['Excellent', 'Good', 'Neutral', 'Poor', 'Very Poor'], true);
+  addQuestion('What did you like most about our service?', 'short', [], false);
+  addQuestion('Which features do you use regularly?', 'checkbox', ['Dashboard', 'Reports', 'Notifications', 'API Access'], false);
+  addQuestion('Any additional comments or suggestions?', 'long', [], false);
+}
+
+// ─── QUESTIONS ────────────────────────────────────────────
+function addQuestion(label='', type='short', options=[], required=false) {
+  const id = ++qIdCounter;
+  const q = { id, label, type, options: options.length ? [...options] : (type==='radio'||type==='checkbox' ? ['Option 1'] : []), required };
+  questions.push(q);
+  renderQuestion(q);
+}
+
+function renderQuestion(q) {
+  const container = document.getElementById('questions-container');
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.id = `q-card-${q.id}`;
+  el.innerHTML = buildQCard(q);
+  container.appendChild(el);
+}
+
+function buildQCard(q) {
+  const idx = questions.findIndex(x => x.id === q.id) + 1;
+  const optionsHTML = (q.type === 'radio' || q.type === 'checkbox')
+    ? `<div class="options-list" id="opts-${q.id}">
+        ${q.options.map((o, i) => buildOptionRow(q.id, q.type, o, i)).join('')}
+        <button class="add-option-btn" onclick="addOption(${q.id})">+ Add option</button>
+       </div>`
+    : `<div class="answer-preview">${q.type === 'long' ? 'Long answer text...' : 'Short answer text...'}</div>`;
+
+  return `
+    <div class="q-card" id="q-inner-${q.id}">
+      <div class="q-card-top">
+        <span class="q-number">Q${idx}</span>
+        <div class="q-body">
+          <input class="q-label-input" placeholder="Question" value="${escHtml(q.label)}"
+            oninput="updateQLabel(${q.id}, this.value)"/>
+          <div class="q-type-row">
+            <select class="q-type-select" onchange="updateQType(${q.id}, this.value)">
+              <option value="short" ${q.type==='short'?'selected':''}>Short answer</option>
+              <option value="long" ${q.type==='long'?'selected':''}>Paragraph</option>
+              <option value="radio" ${q.type==='radio'?'selected':''}>Multiple choice</option>
+              <option value="checkbox" ${q.type==='checkbox'?'selected':''}>Checkboxes</option>
+            </select>
+            <label class="required-toggle">
+              <input type="checkbox" ${q.required?'checked':''} onchange="toggleRequired(${q.id}, this.checked)"/> Required
+            </label>
+          </div>
+          ${optionsHTML}
+        </div>
+      </div>
+      <div class="q-actions">
+        <button class="q-action-btn" onclick="duplicateQuestion(${q.id})">Duplicate</button>
+        <button class="q-action-btn danger" onclick="deleteQuestion(${q.id})">Delete</button>
+      </div>
+    </div>`;
+}
+
+function buildOptionRow(qid, type, val, idx) {
+  const icon = type === 'checkbox'
+    ? `<span class="option-icon checkbox-icon"></span>`
+    : `<span class="option-icon"></span>`;
+  return `<div class="option-row" id="opt-row-${qid}-${idx}">
+    ${icon}
+    <input class="option-input" placeholder="Option ${idx+1}" value="${escHtml(val)}"
+      oninput="updateOption(${qid}, ${idx}, this.value)"/>
+    <button class="option-remove" onclick="removeOption(${qid}, ${idx})" title="Remove">×</button>
+  </div>`;
+}
+
+function updateQLabel(id, val) { getQ(id).label = val; renumberAll(); }
+function updateQType(id, val) {
+  const q = getQ(id);
+  q.type = val;
+  if ((val==='radio'||val==='checkbox') && q.options.length===0) q.options = ['Option 1'];
+  redrawQ(q);
+}
+function toggleRequired(id, val) { getQ(id).required = val; }
+function updateOption(qid, idx, val) { getQ(qid).options[idx] = val; }
+function addOption(qid) {
+  const q = getQ(qid);
+  q.options.push(`Option ${q.options.length+1}`);
+  redrawQ(q);
+}
+function removeOption(qid, idx) {
+  const q = getQ(qid);
+  if (q.options.length <= 1) { showToast('At least one option required'); return; }
+  q.options.splice(idx, 1);
+  redrawQ(q);
+}
+function deleteQuestion(id) {
+  if (questions.length <= 1) { showToast('Form needs at least one question'); return; }
+  questions = questions.filter(q => q.id !== id);
+  const el = document.getElementById(`q-card-${id}`);
+  if (el) el.remove();
+  renumberAll();
+}
+function duplicateQuestion(id) {
+  const orig = getQ(id);
+  addQuestion(orig.label + ' (copy)', orig.type, [...orig.options], orig.required);
+  renumberAll();
+}
+function redrawQ(q) {
+  const el = document.getElementById(`q-inner-${q.id}`);
+  if (el) el.outerHTML = buildQCard(q).match(/<div class="q-card"[^>]*>([\s\S]*)<\/div>\s*$/)[0];
+  // Simpler: replace entire card
+  const card = document.getElementById(`q-card-${q.id}`);
+  if (card) { card.innerHTML = buildQCard(q); }
+}
+function renumberAll() {
+  questions.forEach(q => {
+    const card = document.getElementById(`q-card-${q.id}`);
+    if (card) card.innerHTML = buildQCard(q);
+  });
+}
+function getQ(id) { return questions.find(q => q.id === id); }
+
+// ─── PREVIEW ──────────────────────────────────────────────
+function buildPreview() {
+  document.getElementById('preview-title').textContent = document.getElementById('form-title').value || 'Untitled Poll';
+  document.getElementById('preview-desc').textContent = document.getElementById('form-desc').value;
+  const container = document.getElementById('preview-questions');
+  container.innerHTML = questions.map((q, i) => buildRespQuestion(q, i)).join('');
+}
+
+function buildRespQuestion(q, idx) {
+  const req = q.required ? `<span class="req">*</span>` : '';
+  let input = '';
+  if (q.type === 'short') {
+    input = `<input class="resp-input" type="text" id="resp-${q.id}" placeholder="Your answer"/>`;
+  } else if (q.type === 'long') {
+    input = `<textarea class="resp-input resp-textarea" id="resp-${q.id}" placeholder="Your answer"></textarea>`;
+  } else if (q.type === 'radio') {
+    input = `<div class="resp-radio-group">${q.options.map((o,i) =>
+      `<label class="resp-radio-label"><input type="radio" name="resp-${q.id}" value="${escHtml(o)}"/> ${escHtml(o)}</label>`
+    ).join('')}</div>`;
+  } else if (q.type === 'checkbox') {
+    input = `<div class="resp-checkbox-group">${q.options.map((o,i) =>
+      `<label class="resp-checkbox-label"><input type="checkbox" name="resp-${q.id}" value="${escHtml(o)}"/> ${escHtml(o)}</label>`
+    ).join('')}</div>`;
+  }
+  return `<div class="card"><div class="resp-card resp-question">
+    <div class="resp-q-label">Q${idx+1}. ${escHtml(q.label)}${req}</div>
+    ${input}
+  </div></div>`;
+}
+
+// ─── SUBMIT RESPONSE ──────────────────────────────────────
+function submitResponse() {
+  const row = { timestamp: new Date().toISOString() };
+  let valid = true;
+
+  for (const q of questions) {
+    if (q.type === 'short' || q.type === 'long') {
+      const el = document.getElementById('resp-' + q.id);
+      const val = el ? el.value.trim() : '';
+      if (q.required && !val) { valid = false; showToast('"' + q.label + '" is required'); break; }
+      row[q.label] = val;
+    } else if (q.type === 'radio') {
+      const checked = document.querySelector('input[name="resp-' + q.id + '"]:checked');
+      if (q.required && !checked) { valid = false; showToast('"' + q.label + '" is required'); break; }
+      row[q.label] = checked ? checked.value : '';
+    } else if (q.type === 'checkbox') {
+      const checked = Array.from(document.querySelectorAll('input[name="resp-' + q.id + '"]:checked')).map(function(x){ return x.value; });
+      if (q.required && checked.length === 0) { valid = false; showToast('"' + q.label + '" is required'); break; }
+      row[q.label] = checked.join('; ');
+    }
+  }
+
+  if (!valid) return;
+  responses.push(row);
+  autoSaveCSV();
+  showThankYou();
+}
+
+// ─── AUTO SAVE (silent, after each submit) ────────────────
+async function autoSaveCSV() {
+  if (responses.length === 0) return;
+  const headers = Object.keys(responses[0]);
+  const csvRows = [
+    headers.map(csvEsc).join(','),
+    ...responses.map(function(r){ return headers.map(function(h){ return csvEsc(r[h] || ''); }).join(','); })
+  ];
+  const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+
+  if (window.showSaveFilePicker) {
+    try {
+      if (!fileHandle) {
+        fileHandle = await window.showSaveFilePicker({
+          suggestedName: 'results.csv',
+          types: [{ description: 'CSV Files', accept: { 'text/csv': ['.csv'] } }]
+        });
+      }
+      const writable = await fileHandle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+    } catch(e) {
+      if (e.name !== 'AbortError') { fileHandle = null; fallbackDownload(blob); }
+    }
+  } else {
+    fallbackDownload(blob);
+  }
+}
+
+// ─── THANK YOU SCREEN ─────────────────────────────────────
+var thankYouTimer = null;
+var thankYouBarTimer = null;
+var THANKYOU_DURATION = 4000; // ms before returning to form
+
+function showThankYou() {
+  var overlay = document.getElementById('thankyou-overlay');
+  var fill = document.getElementById('thankyou-bar-fill');
+  overlay.classList.add('visible');
+
+  // Animate progress bar
+  fill.style.transition = 'none';
+  fill.style.width = '0%';
+  setTimeout(function() {
+    fill.style.transition = 'width ' + THANKYOU_DURATION + 'ms linear';
+    fill.style.width = '100%';
+  }, 30);
+
+  thankYouTimer = setTimeout(function() {
+    overlay.classList.remove('visible');
+    fill.style.transition = 'none';
+    fill.style.width = '0%';
+    buildPreview(); // reset all fields
+  }, THANKYOU_DURATION);
+}
+
+
+function buildResultsView() {
+  const count = responses.length;
+  document.getElementById('results-count').textContent =
+    count === 0 ? 'No responses yet.' : `${count} response${count > 1 ? 's' : ''} collected`;
+
+  const area = document.getElementById('results-table-area');
+  if (count === 0) { area.innerHTML = `<div class="no-results">Submit some responses to see results here.</div>`; return; }
+
+  const headers = Object.keys(responses[0]);
+  const thead = `<tr>${headers.map(h => `<th>${escHtml(h)}</th>`).join('')}</tr>`;
+  const tbody = responses.map(r =>
+    `<tr>${headers.map(h => `<td>${escHtml(r[h] || '')}</td>`).join('')}</tr>`
+  ).join('');
+  area.innerHTML = `<table><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
+}
+
+// ─── CSV SAVE ─────────────────────────────────────────────
+async function saveToCSV() {
+  if (responses.length === 0) { showToast('No responses to save yet'); return; }
+
+  const headers = Object.keys(responses[0]);
+  const csvRows = [
+    headers.map(csvEsc).join(','),
+    ...responses.map(r => headers.map(h => csvEsc(r[h] || '')).join(','))
+  ];
+  const csvContent = csvRows.join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+
+  // Try File System Access API (Chrome/Edge) for true local save to results.csv
+  if (window.showSaveFilePicker) {
+    try {
+      if (!fileHandle) {
+        fileHandle = await window.showSaveFilePicker({
+          suggestedName: 'results.csv',
+          types: [{ description: 'CSV Files', accept: { 'text/csv': ['.csv'] } }]
+        });
+      }
+      const writable = await fileHandle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      const status = document.getElementById('save-status');
+      status.classList.add('visible');
+      setTimeout(() => status.classList.remove('visible'), 3000);
+      showToast('✓ Saved to results.csv');
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        fileHandle = null;
+        fallbackDownload(blob);
+      }
+    }
+  } else {
+    // Fallback: trigger download
+    fallbackDownload(blob);
+  }
+}
+
+function fallbackDownload(blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'results.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ results.csv downloaded');
+}
+
+function clearResults() {
+  if (responses.length === 0) return;
+  if (!confirm('Clear all responses? This cannot be undone.')) return;
+  responses = [];
+  fileHandle = null;
+  buildResultsView();
+  showToast('Responses cleared');
+}
+
+// ─── TAB SWITCH ───────────────────────────────────────────
+function switchTab(tab) {
+  var views = {edit:'edit-view', respond:'respond-view', results:'results-view'};
+  for (var key in views) {
+    var el = document.getElementById(views[key]);
+    el.style.display = (key === tab) ? 'block' : 'none';
+  }
+  document.querySelectorAll('.tab-btn').forEach(function(b, i) {
+    var tabs = ['edit','respond','results'];
+    b.classList.toggle('active', tabs[i] === tab);
+  });
+  if (tab === 'respond') buildPreview();
+  if (tab === 'results') buildResultsView();
+}
+
+// ─── HELPERS ──────────────────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function csvEsc(v) {
+  const s = String(v);
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) return `"${s.replace(/"/g,'""')}"`;
+  return s;
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ─── START ────────────────────────────────────────────────
+document.getElementById('respond-view').style.display = 'none';
+document.getElementById('results-view').style.display = 'none';
+init();
+</script>
+</body>
+</html>
